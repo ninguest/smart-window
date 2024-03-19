@@ -1,0 +1,9 @@
+{
+    "sensor_id": "default_id",
+    "sensor_type": "default_type",
+    "sensor_data": [
+        "default_data1",
+        "default_data2"
+    ],
+    "c_executable_path": "/home/nin/Downloads/TestC/main"
+}
