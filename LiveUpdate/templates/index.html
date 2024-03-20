@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Windows Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+        .button-container {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+            margin-left: 20px;
+            margin-right: 20px;
+            margin-bottom: 20px;
+            background-color: #222; /* Dark background color */
+            border-radius: 10px; /* Round corners */
+            padding: 20px; /* Add padding */
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .button-container h2 {
+            margin-bottom: 10px;
+        }
+        #main-content {
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+
+        .graph-container {
+            margin-bottom: 40px;
+        }
+        .graph-title {
+            text-align: center;
+        }
+        .sensor-graph {
+            width: 100%;
+            height: 400px;
+            background-color: #111;
+        }
+    </style>
+</head>
+<body>
+    <div class="button-container">
+        <h2>Example Buttons</h2>
+        <button class="button">Button 1</button>
+        <button class="button">Button 2</button>
+        <button class="button">Button 3</button>
+    </div>
+    <div id="main-content">
+        <h1>Sensor Data</h1>
+        <!-- Container for each graph -->
+        <div class="graph-container">
+            <h2 class="graph-title">Temperature (°C)</h2>
+            <canvas id="temperature-graph" class="sensor-graph"></canvas>
+        </div>
+        <div class="graph-container">
+            <h2 class="graph-title">Humidity (%)</h2>
+            <canvas id="humidity-graph" class="sensor-graph"></canvas>
+        </div>
+        <div class="graph-container">
+            <h2 class="graph-title">Pressure</h2>
+            <canvas id="pressure-graph" class="sensor-graph"></canvas>
+        </div>
+        <div class="graph-container">
+            <h2 class="graph-title">Lux</h2>
+            <canvas id="lux-graph" class="sensor-graph"></canvas>
+        </div>
+        <div class="graph-container">
+            <h2 class="graph-title">UVS</h2>
+            <canvas id="uvs-graph" class="sensor-graph"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        fetch('/get_sensor_data')
+        .then(response => response.json())
+        .then(data => {
+            // Separate data for each parameter
+            const labels = data.map(item => item.timestamp);
+            const temperatureData = data.map(item => item.temperature);
+            const humidityData = data.map(item => item.humidity);
+            const pressureData = data.map(item => item.pressure);
+            const luxData = data.map(item => item.lux);
+            const uvsData = data.map(item => item.uvs);
+
+            // Create graphs for each parameter
+            createGraph('temperature-graph', 'Temperature (°C)', labels, temperatureData, '#ff6384');
+            createGraph('humidity-graph', 'Humidity (%)', labels, humidityData, '#36a2eb');
+            createGraph('pressure-graph', 'Pressure', labels, pressureData, '#ffce56');
+            createGraph('lux-graph', 'Lux', labels, luxData, '#4bc0c0');
+            createGraph('uvs-graph', 'UVS', labels, uvsData, '#ff9f40');
+        })
+        .catch(error => console.error('Error fetching data:', error));
+
+        // Function to create a graph
+        function createGraph(canvasId, label, labels, data, borderColor) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        borderColor: borderColor,
+                        backgroundColor: 'transparent'
+                    }]
+                },
+                options: {
+                    scales: {
+                        xAxes: [{
+                            type: 'time',
+                            time: {
+                                unit: 'hour',
+                                displayFormats: {
+                                    hour: 'HH:mm'
+                                }
+                            }
+                        }]
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

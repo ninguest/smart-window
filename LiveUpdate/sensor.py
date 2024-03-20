@@ -5,7 +5,7 @@ import threading
 import os
 import random
 import string
-import subprocess
+import time
 
 
 # Path to your compiled C executable
@@ -81,6 +81,7 @@ def random_id_generator(length):
 # Function to execute the C code and capture output
 def execute_c_code(c_executable_path):
     try:
+        time.sleep(1)
         # Execute the C code and capture output
         result = subprocess.run([c_executable_path], capture_output=True, text=True, check=True)
         this_output = result.stdout.strip()

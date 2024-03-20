@@ -9,14 +9,20 @@ from datetime import datetime
 sensors = {}
 actions = {}
 sensorDataPath = "sensor_data.json"
+
 live_sensor_data = {
     "temperature": None,
     "humidity": None,
     "pressure": None,
-    "light": None,
+    "lux": None,
     "gas": None,
-    "uv": None,
+    "uvs": None,
     "timestamp": None
+}
+
+server_data = {
+    "show_sensor_logs" : False,
+    "function_mode" : "auto"
 }
 
 # Function to handle client connections
@@ -47,18 +53,23 @@ def handle_client(client_socket, client_data):
 # Update Live Sensor Data 
 def update_live_sensor_data(data):
     try:
-        if data["temperature"] is not None:
-            live_sensor_data["temperature"] = data["temperature"]
-        if data["humidity"] is not None:
+        if server_data["show_sensor_logs"] == True:
+            print(f"\nUpdating live sensor data: \n{data}")
+            
+        if "temperature" in data and data["temperature"] is not None:
+            live_sensor_data["temperature"] = data["temperature"] - 10
+        if "humidity" in data and data["humidity"] is not None:
             live_sensor_data["humidity"] = data["humidity"]
-        if data["pressure"] is not None:
+        if "pressure" in data and data["pressure"] is not None:
             live_sensor_data["pressure"] = data["pressure"]
-        if data["light"] is not None:
-            live_sensor_data["light"] = data["light"]
-        if data["gas"] is not None:    
-            live_sensor_data["gas"] = data["gas"]
-        if data["uv"] is not None:
-            live_sensor_data["uv"] = data["uv"]
+        if "lux" in data and data["lux"] is not None:
+            live_sensor_data["lux"] = data["lux"]
+        
+        if "uvs" in data and data["uvs"] is not None:
+            live_sensor_data["gas"] = data["uvs"] # due to some unknown problem, gas sensor is showing uvs sensor data
+        
+        if "gas" in data and data["gas"] is not None: # this is the fix, abandon gas value
+            live_sensor_data["uvs"] = data["gas"]
         live_sensor_data["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     except Exception as e:
         print(f"Error updating live sensor data: {e}")
@@ -146,6 +157,30 @@ def command_interface():
             print("\nShutting down server...")
             import os
             os._exit(1)
+        
+        elif command == "mode":
+            print(f"\nCurrent Function mode: '{server_data['function_mode']}'.")
+        
+        elif command == "mode auto":
+            server_data["function_mode"] = "auto"
+            print(f"\nFunction mode set to '{server_data['function_mode']}'.")
+        
+        elif command == "mode manual":
+            server_data["function_mode"] = "manual"
+            print(f"\nFunction mode set to '{server_data['function_mode']}'.")
+        
+        elif command == "sensors":
+            print("\nSensors:")
+            for sensor in sensors.values():
+                print(f"\n- {sensor['sensor_id']} : {sensor['sensor_data']}")
+        
+        elif command == "logon":
+            server_data["show_sensor_logs"] = True
+            print(f"\nSensor logs {server_data['show_sensor_logs']}")
+        
+        elif command == "logoff":
+            server_data["show_sensor_logs"] = False
+            print(f"\nSensor logs {server_data['show_sensor_logs']}")
         
         else:
             print("\nInvalid command.")
