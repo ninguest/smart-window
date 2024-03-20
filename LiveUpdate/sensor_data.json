@@ -27097,5 +27097,68 @@
         "gas": 0,
         "uvs": 0,
         "timestamp": "2024-03-21 00:09:26"
+    },
+    {
+        "temperature": 25.880000000000003,
+        "humidity": 48.63,
+        "pressure": 956.07,
+        "lux": null,
+        "gas": 0,
+        "uvs": 0,
+        "timestamp": "2024-03-21 00:09:28"
+    },
+    {
+        "temperature": 25.880000000000003,
+        "humidity": 48.65,
+        "pressure": 956.04,
+        "lux": null,
+        "gas": 0,
+        "uvs": 0,
+        "timestamp": "2024-03-21 00:09:29"
+    },
+    {
+        "temperature": 25.93,
+        "humidity": 48.59,
+        "pressure": 955.99,
+        "lux": null,
+        "gas": 0,
+        "uvs": 0,
+        "timestamp": "2024-03-21 00:09:31"
+    },
+    {
+        "temperature": 25.93,
+        "humidity": 48.6,
+        "pressure": 955.94,
+        "lux": null,
+        "gas": 0,
+        "uvs": 0,
+        "timestamp": "2024-03-21 00:09:32"
+    },
+    {
+        "temperature": 25.9,
+        "humidity": 48.62,
+        "pressure": 955.94,
+        "lux": null,
+        "gas": 0,
+        "uvs": 0,
+        "timestamp": "2024-03-21 00:09:34"
+    },
+    {
+        "temperature": 25.9,
+        "humidity": 48.7,
+        "pressure": 955.96,
+        "lux": null,
+        "gas": 0,
+        "uvs": 0,
+        "timestamp": "2024-03-21 00:09:35"
+    },
+    {
+        "temperature": 25.93,
+        "humidity": 48.84,
+        "pressure": 955.96,
+        "lux": null,
+        "gas": 0,
+        "uvs": 0,
+        "timestamp": "2024-03-21 00:09:36"
     }
 ]
