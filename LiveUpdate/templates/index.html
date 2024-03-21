@@ -145,6 +145,45 @@
                 }
             });
         }
+
+        // Function to fetch sensor data and update graphs
+        function updateGraphs() {
+            console.log('Updating graphs');
+            fetch('/get_sensor_data')
+            .then(response => response.json())
+            .then(data => {
+                // Separate data for each parameter
+                const labels = data.map(item => item.timestamp);
+                const temperatureData = data.map(item => item.temperature);
+                const humidityData = data.map(item => item.humidity);
+                const pressureData = data.map(item => item.pressure);
+                const luxData = data.map(item => item.lux);
+                const uvsData = data.map(item => item.uvs);
+
+                // Update graphs for each parameter
+                updateGraph('temperature-graph', labels, temperatureData);
+                updateGraph('humidity-graph', labels, humidityData);
+                updateGraph('pressure-graph', labels, pressureData);
+                updateGraph('lux-graph', labels, luxData);
+                updateGraph('uvs-graph', labels, uvsData);
+            })
+            .catch(error => console.error('Error fetching data:', error));
+        }
+
+        // Function to update a graph
+        function updateGraph(canvasId, labels, data) {
+            const chart = Chart.getChart(canvasId);
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = data;
+            chart.update();
+        }
+
+        // Initial call to update graphs
+        updateGraphs();
+
+        // Set interval to update graphs every 3 seconds
+        setInterval(updateGraphs, 3000);
+
     </script>
 </body>
 </html>
