@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{url_for('static', filename='all.min.css')}}">
     <title>Smart Windows Panel</title>
     <style>
         body {
@@ -15,13 +16,20 @@
         .button-container {
             text-align: center;
             padding: 20px;
-            margin-top: 30px;
-            margin-left: 20px;
-            margin-right: 20px;
-            margin-bottom: 20px;
+            margin: 20px;
             background-color: #222; /* Dark background color */
             border-radius: 10px; /* Round corners */
             padding: 20px; /* Add padding */
+        }
+        .container {
+            display: flex;
+            flex-direction: column-reverse;
+        }
+        @media (min-width: 576px) {
+        .container {
+            flex-direction: row;
+            justify-content: space-between;
+        }
         }
         .button {
             background-color: #4CAF50;
@@ -63,11 +71,20 @@
     </style>
 </head>
 <body>
-    <div class="button-container">
-        <h2>Example Buttons</h2>
-        <button class="button">Button 1</button>
-        <button class="button">Button 2</button>
-        <button class="button">Button 3</button>
+    <div class="container">
+        <div class="button-container" style="width: 40% !important">
+            <p id="temperature">Temperature: --°C</p>
+            <p id="humidity">Humidity: --%</p>
+            <p id="pressure">Pressure: -- hPa</p>
+            <p id="lux">Lux: --</p>
+            <p id="uvs">UVS: --</p>
+        </div>
+        <div class="button-container" style="width: 60% !important">
+            <h2>Example Buttons</h2>
+            <button class="button">Button 1</button>
+            <button class="button">Button 2</button>
+            <button class="button">Button 3</button>
+        </div>
     </div>
     <div id="main-content">
         <h1>Sensor Data</h1>
@@ -94,61 +111,11 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{url_for('static', filename='chart.js')}}"></script>
     <script>
-        fetch('/get_sensor_data')
-        .then(response => response.json())
-        .then(data => {
-            // Separate data for each parameter
-            const labels = data.map(item => item.timestamp);
-            const temperatureData = data.map(item => item.temperature);
-            const humidityData = data.map(item => item.humidity);
-            const pressureData = data.map(item => item.pressure);
-            const luxData = data.map(item => item.lux);
-            const uvsData = data.map(item => item.uvs);
-
-            // Create graphs for each parameter
-            createGraph('temperature-graph', 'Temperature (°C)', labels, temperatureData, '#ff6384');
-            createGraph('humidity-graph', 'Humidity (%)', labels, humidityData, '#36a2eb');
-            createGraph('pressure-graph', 'Pressure', labels, pressureData, '#ffce56');
-            createGraph('lux-graph', 'Lux', labels, luxData, '#4bc0c0');
-            createGraph('uvs-graph', 'UVS', labels, uvsData, '#ff9f40');
-        })
-        .catch(error => console.error('Error fetching data:', error));
-
-        // Function to create a graph
-        function createGraph(canvasId, label, labels, data, borderColor) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: label,
-                        data: data,
-                        borderColor: borderColor,
-                        backgroundColor: 'transparent'
-                    }]
-                },
-                options: {
-                    scales: {
-                        xAxes: [{
-                            type: 'time',
-                            time: {
-                                unit: 'hour',
-                                displayFormats: {
-                                    hour: 'HH:mm'
-                                }
-                            }
-                        }]
-                    }
-                }
-            });
-        }
-
-        // Function to fetch sensor data and update graphs
-        function updateGraphs() {
-            console.log('Updating graphs');
+        // Update data 
+        function updateData() {
+            console.log('Updating data...');
             fetch('/get_sensor_data')
             .then(response => response.json())
             .then(data => {
@@ -160,29 +127,70 @@
                 const luxData = data.map(item => item.lux);
                 const uvsData = data.map(item => item.uvs);
 
-                // Update graphs for each parameter
-                updateGraph('temperature-graph', labels, temperatureData);
-                updateGraph('humidity-graph', labels, humidityData);
-                updateGraph('pressure-graph', labels, pressureData);
-                updateGraph('lux-graph', labels, luxData);
-                updateGraph('uvs-graph', labels, uvsData);
+                // Create graphs for each parameter
+                createOrUpdateGraph('temperature-graph', 'Temperature (°C)', labels, temperatureData, '#ff6384');
+                createOrUpdateGraph('humidity-graph', 'Humidity (%)', labels, humidityData, '#36a2eb');
+                createOrUpdateGraph('pressure-graph', 'Pressure', labels, pressureData, '#ffce56');
+                createOrUpdateGraph('lux-graph', 'Lux', labels, luxData, '#4bc0c0');
+                createOrUpdateGraph('uvs-graph', 'UVS', labels, uvsData, '#ff9f40');
+
+                const latest = data[data.length - 1];
+
+                document.getElementById('temperature').textContent = `Temperature: ${latest.temperature}°C`;
+                document.getElementById('humidity').textContent = `Humidity: ${latest.humidity}%`;
+                document.getElementById('pressure').textContent = `Pressure: ${latest.pressure} hPa`;
+                document.getElementById('lux').textContent = `Lux: ${latest.lux}`;
+                document.getElementById('uvs').textContent = `UVS: ${latest.uvs}`;
+                            
             })
             .catch(error => console.error('Error fetching data:', error));
         }
 
-        // Function to update a graph
-        function updateGraph(canvasId, labels, data) {
-            const chart = Chart.getChart(canvasId);
-            chart.data.labels = labels;
-            chart.data.datasets[0].data = data;
-            chart.update();
+        // Function to create or update a graph
+        function createOrUpdateGraph(canvasId, label, labels, data, borderColor) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            let chart = Chart.getChart(canvasId);
+
+            if (chart) {
+                // Update the existing chart
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = data;
+                chart.update();
+            } else {
+                // Create a new chart
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: label,
+                            data: data,
+                            borderColor: borderColor,
+                            backgroundColor: 'transparent'
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            xAxes: [{
+                                type: 'time',
+                                time: {
+                                    unit: 'hour',
+                                    displayFormats: {
+                                        hour: 'HH:mm'
+                                    }
+                                }
+                            }]
+                        }
+                    }
+                });
+            }
         }
 
-        // Initial call to update graphs
-        updateGraphs();
+        // Initial call to update sensor data
+        updateData();
 
-        // Set interval to update graphs every 3 seconds
-        setInterval(updateGraphs, 3000);
+        // Set interval to update sensor data every 3 seconds
+        setInterval(updateData, 3000);
 
     </script>
 </body>
