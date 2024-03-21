@@ -9,10 +9,9 @@ import time
 
 
 # Path to your compiled C executable
-connection_type = "sensor"
-sensor_type = "multi"
+connection_type = "action"
 dataJSONPath = "data.json"
-sensor_data = ["pressure", "temperature", "humidity", "light", "uv", "gas"]
+action_type = ["motor"]
 restartScriptPath = "restartSensor.sh"
 
 # Read Data 
@@ -29,10 +28,8 @@ def read_json_file(file_path):
         host_port = input("\nWhat is the host port?\n")
         data = {
             "connection_type": connection_type,
-            "sensor_id": random_id_generator(8),
-            "sensor_type": sensor_type,
-            "sensor_data": sensor_data,
-            "c_executable_path": f"/home/{username}/Desktop/sensorReader/main",
+            "action_id": random_id_generator(8),
+            "action_type": action_type,
             "host_ip": host_ip,
             "host_port": host_port
         }
@@ -62,6 +59,14 @@ def receive_messages(client_socket):
                     subprocess.run([restartScriptPath], capture_output=True, text=True, check=True)
                 except subprocess.CalledProcessError as e:
                     print(f"Error restarting sensor: {e}")
+            elif message == "action_control:light_on":
+                light_control(True)
+            elif message == "action_control:light_off":
+                light_control(False)
+            elif message == "action_control:window_on":
+                window_control(True)
+            elif message == "action_control:window_off":
+                window_control(False)
             else:
                 print("\n" + message)
             
@@ -73,22 +78,30 @@ def receive_messages(client_socket):
     client_socket.close()
     quit()
 
+# Jerry Update
+# control window on/off
+def window_control(bool):
+    if bool == True:
+        print("Window is on")
+        # turn on the window
+    else:
+        print("Window is off")
+        # turn off the window
+
+# Jerry Update
+# control light on/off
+def light_control(bool):
+    if bool == True:
+        print("Light is on")
+        # turn on the light
+    else:
+        print("Light is off")
+        # turn off the light
+
 # Random ID generator 
 def random_id_generator(length):
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
-
-# Function to execute the C code and capture output
-def execute_c_code(c_executable_path):
-    try:
-        time.sleep(1)
-        # Execute the C code and capture output
-        result = subprocess.run([c_executable_path], capture_output=True, text=True, check=True)
-        this_output = result.stdout.strip()
-        return this_output
-    except subprocess.CalledProcessError as e:
-        print(f"Error executing C code: {e}")
-        return None
 
 # Main function.
 def main():
@@ -100,7 +113,7 @@ def main():
         print("\nError reading data from file. Exiting program....")
         return
     
-    print(f"\n[Client Information]\nID: {client_data['sensor_id']}\nType: {client_data['sensor_type']}\nData: {client_data['sensor_data']}\nC Executable Path: {client_data['c_executable_path']}\nHost IP: {client_data['host_ip']}\nHost Port: {client_data['host_port']}\n")
+    print(f"\n[Client Information]\nID: {client_data['action_id']}\nType: {client_data['action_type']}\nHost IP: {client_data['host_ip']}\nHost Port: {client_data['host_port']}\n")
 
     # Create client socket to connect client to server.
     while True:
@@ -122,20 +135,11 @@ def main():
     response = client_socket.recv(1024).decode('utf-8') # Receive data from server.
     
     if(response == "[Sensor identification success.]"):
-        print("[Sensor identification success.]")
+        print("[Identification success.]")
         # Start thread to receive data from server.
         receive_thread = threading.Thread(target=receive_messages, args=(client_socket))
         receive_thread.start()
 
-        # Send data to server.
-        print("\n[Sending sensor data to server]")
-        while True:
-            # Execute C code and send output to server
-            data = execute_c_code(client_data["c_executable_path"])
-            if data is not None:
-                client_socket.sendall(data.encode('utf-8')) # Send data to server.
-            else:
-                client_socket.sendall("no data".encode('utf-8'))
     else:
         print("\nExiting program....")
         os._exit(1)
