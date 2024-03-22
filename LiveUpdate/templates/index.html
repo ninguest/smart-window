@@ -189,6 +189,8 @@
         // Update data 
         function updateData() {
             console.log('Updating data...');
+
+            // Read sensor data from the JSON
             fetch('/get_sensor_data')
             .then(response => response.json())
             .then(data => {
@@ -217,6 +219,9 @@
                             
             })
             .catch(error => console.error('Error fetching data:', error));
+
+            // Read action data from the JSON
+            // Code Here
         }
 
         // Function to create or update a graph
