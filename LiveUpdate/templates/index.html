@@ -68,24 +68,97 @@
             height: 400px;
             background-color: #111;
         }
+        
+        input[type="checkbox"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            position: relative;
+            margin: auto;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            cursor: pointer;
+            outline: none;
+            height: 5.6em;
+            width: 12.5em;
+            background-color: #000000;
+            -webkit-transform: skewX(-7deg);
+            -ms-transform: skewX(-7deg);
+            transform: skewX(-7deg);
+            -webkit-transition: 0.3s;
+            -o-transition: 0.3s;
+            transition: 0.3s;
+        }
+        input[type="checkbox"]:before {
+            font-size: 1.5em;
+            content: "OFF";
+            position: relative;
+            width: 3.75em;
+            height: 2.9em;
+            background-color: #2d2936;
+            color: #a0a0a0;
+            top: 0.42em;
+            left: 0.42em;
+            -webkit-transition: 0.3s;
+            -o-transition: 0.3s;
+            transition: 0.3s;
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            font-family: "Poppins", sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        input[type="checkbox"]:checked {
+            background: -o-linear-gradient(315deg, #8175fe, #89befe);
+            background: linear-gradient(135deg, #8175fe, #89befe);
+        }
+        input[type="checkbox"]:checked:before {
+            content: "ON";
+            left: 4.1em;
+            color: #89befe;
+        }
+        
+        .scaledown50{
+            zoom: 0.5;
+            -moz-transform: scale(0.5);
+        }
+        
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="button-container" style="width: 40% !important">
-            <p id="temperature">Temperature: --°C</p>
-            <p id="humidity">Humidity: --%</p>
-            <p id="pressure">Pressure: -- hPa</p>
-            <p id="lux">Lux: --</p>
-            <p id="uvs">UVS: --</p>
+    
+    <div class="button-container">
+        <p id="temperature">Temperature: --°C</p>
+        <p id="humidity">Humidity: --%</p>
+        <p id="pressure">Pressure: -- hPa</p>
+        <p id="lux">Lux: --</p>
+        <p id="uvs">UVS: --</p>
+    </div>
+    <div class="button-container">
+    
+        <div id="mode-div">
+            <div><h4>Auto Mode</h4></div>
+            <div class="scaledown50"><input id="mode-switch" type="checkbox" checked /></div>
         </div>
-        <div class="button-container" style="width: 60% !important">
-            <h2>Example Buttons</h2>
-            <button class="button">Button 1</button>
-            <button class="button">Button 2</button>
-            <button class="button">Button 3</button>
+        <div id="window-div" hidden >
+            <div><h4>Window</h4></div>
+            <div class="scaledown50"><input id="window-switch" type="checkbox" checked /></div>
+        </div>
+        <div id="light-div" hidden >
+            <div><h4>Light</h4></div>
+            <div class="scaledown50"><input id="light-switch" type="checkbox" checked /></div>
         </div>
     </div>
+
     <div id="main-content">
         <h1>Sensor Data</h1>
         <!-- Container for each graph -->
@@ -186,12 +259,28 @@
             }
         }
 
+        function modeSwitcher(){
+            var mode = document.getElementById('mode-switch').checked;
+            if(mode){
+                document.getElementById('window-div').hidden = true;
+                document.getElementById('light-div').hidden = true;
+            } else {
+                document.getElementById('window-div').hidden = false;
+                document.getElementById('light-div').hidden = false;
+            }
+        }
+
         // Initial call to update sensor data
         updateData();
-
+        modeSwitcher();
         // Set interval to update sensor data every 3 seconds
         setInterval(updateData, 3000);
 
+        document.getElementById('mode-switch').addEventListener('change', function() {
+            modeSwitcher();
+        });
+
+        
     </script>
 </body>
 </html>
