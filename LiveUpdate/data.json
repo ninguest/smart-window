@@ -1,0 +1,9 @@
+{
+    "connection_type": "action",
+    "action_id": "3O9JvWvC",
+    "action_type": [
+        "motor"
+    ],
+    "host_ip": "192.168.1.15",
+    "host_port": "8888"
+}

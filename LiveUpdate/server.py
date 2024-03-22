@@ -9,6 +9,11 @@ from datetime import datetime
 sensors = {}
 actions = {}
 sensorDataPath = "sensor_data.json"
+thresholdDataPath = "threshold_data.json"
+thresholds = []
+sensor_datas = [dict for i in range(20)]
+
+
 
 live_sensor_data = {
     "temperature": None,
@@ -25,6 +30,85 @@ server_data = {
     "function_mode" : "auto"
 }
 
+class Threshold:
+    def __init__(self, datatype: str, data_threshold: any, operator: str, output_client: str) -> None:
+        self.datatype = datatype
+        self.data_threshold = data_threshold
+        self.operator = operator
+        self.output_client = output_client
+
+def get_mean(datatype: str) -> float:
+    total = 0
+    size = len(sensor_datas) if size is not 0 else 1
+        
+    sensor_data: dict
+    for sensor_data in sensor_datas:
+        data = sensor_data.get(datatype)
+        if data is None:
+            continue
+        total += sensor_data.get(datatype)
+    return total / float(size)
+
+def is_threshold_activated(threshold: Threshold):
+        match threshold.operator:
+            case "<": return get_mean(threshold.datatype) < threshold.data_threshold
+            case ">": return get_mean(threshold.datatype) > threshold.data_threshold
+            case "=": return get_mean(threshold.datatype) == threshold.data_threshold  
+            case _: return False
+
+def run_threshold():
+
+    if len(sensor_datas) < 20:
+        return
+        
+    threshold: Threshold
+    for threshold in thresholds:
+        if is_threshold_activated(threshold):
+            print(threshold.output_client)
+            #threshold.output_client.sendall("True".encode('utf-8'))
+
+def add_threshold(threshold: Threshold):
+    thresholds.append(threshold)
+
+def load_threshold_data(file_path):
+    try:
+        with open(file_path, "r") as file:
+            threshold_data = json.load(file)
+        thresholds = threshold_data
+        return threshold_data
+    except FileNotFoundError:
+        # If the file doesn't exist yet create a new file with initial data
+        thresholds = [
+            {
+                "datatype": "temperature",
+                "data_threshold": 28,
+                "operator": ">",
+                "output_client": ["action_control:window_on"]
+            },
+            {
+                "datatype": "humidity",
+                "data_threshold": 60,
+                "operator": ">",
+                "output_client": ["action_control:window_on"]
+            },
+            {
+                "datatype": "lux",
+                "data_threshold": 0.4,
+                "operator": "<",
+                "output_client": ["action_control:light_on", "action_control:window_on"]
+            },
+            {
+                "datatype": "uvs",
+                "data_threshold": 100,
+                "operator": ">",
+                "output_client": ["action_control:window_on"]
+            }
+            
+        ]
+        return []
+    except Exception as e:
+        print(f"Error loading threshold data: {e}")
+
 # Function to handle client connections
 def handle_client(client_socket, client_data):
     while True:
@@ -40,7 +124,9 @@ def handle_client(client_socket, client_data):
                 if post_timestamp != pre_timestamp:
                     # Append sensor data to file
                     append_sensor_data(live_sensor_data, sensorDataPath)
-                                
+                add_data(live_sensor_data)
+                run_threshold()              
+                
             elif client_data["connection_type"] == "action":
                 pass
             
@@ -114,7 +200,7 @@ def load_latest_sensor_data(file_path):
 # Get all sensor data
 def load_all_sensor_data(file_path):
     try:
-        with open(json_file_path, "r") as file:
+        with open(file_path, "r") as file:
             sensor_data = json.load(file)
         return sensor_data
     except FileNotFoundError:
@@ -182,9 +268,17 @@ def command_interface():
             server_data["show_sensor_logs"] = False
             print(f"\nSensor logs {server_data['show_sensor_logs']}")
         
+        elif command == "actionWO":
+            print("\nActions: Window On")
+            for action in actions.keys():
+                action.sendall("action_control:window_on".encode('utf-8'))
         else:
             print("\nInvalid command.")
 
+def add_data(data):
+    sensor_datas.append(data)
+    sensor_datas.pop(0)
+    
 # Main function
 def main():
     

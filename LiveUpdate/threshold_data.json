@@ -1,0 +1,1 @@
+[{"value": "28", "operator": "more_than", "action": "close_window", "datatype": "temperature"}, {"value": "60", "operator": "more_than", "action": "close_window", "datatype": "humidity"}, {"value": "100", "operator": "more_than", "action": "close_window", "datatype": "uvs"}]

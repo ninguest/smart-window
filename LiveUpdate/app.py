@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, request, jsonify, render_template
 import json
 import socket
 
@@ -44,6 +44,34 @@ def get_sensor_data():
         return sensor_data
     else:
         return None  # Return empty list if sensor data is not available
+
+# Route to save threshold data to JSON file
+@app.route('/save_threshold_data', methods=['POST'])
+def save_threshold_data():
+    try:
+        threshold_data = request.json
+        with open('threshold_data.json', 'w') as file:
+            json.dump(threshold_data, file)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        print(f"Error saving threshold data: {str(e)}")
+        return jsonify({'success': False}), 500
+
+# Route to load the threshold rules from the file
+@app.route('/load_rules')
+def load_rules():
+    try:
+        with open('threshold_data.json', 'r') as file:
+            threshold_data = json.load(file)
+        return jsonify(threshold_data)
+    except FileNotFoundError:
+        # Create a new file with an empty list if it doesn't exist
+        with open('threshold_data.json', 'w') as file:
+            json.dump([], file)
+        return jsonify([])  # Return an empty list if the file didn't exist
+    except Exception as e:
+        print(f"Error loading threshold data: {str(e)}")
+        return jsonify([])
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)

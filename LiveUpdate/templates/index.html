@@ -3,147 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{url_for('static', filename='all.min.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
     <title>Smart Windows Panel</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #000;
-            color: #fff;
-            margin: 0;
-            padding: 0;
-        }
-        .button-container {
-            text-align: center;
-            padding: 20px;
-            margin: 20px;
-            background-color: #222; /* Dark background color */
-            border-radius: 10px; /* Round corners */
-            padding: 20px; /* Add padding */
-        }
-        .container {
-            display: flex;
-            flex-direction: column-reverse;
-        }
-        @media (min-width: 576px) {
-        .container {
-            flex-direction: row;
-            justify-content: space-between;
-        }
-        }
-        .button {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 15px 32px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-            border-radius: 8px;
-        }
-        .button:hover {
-            background-color: #45a049;
-        }
-        .button-container h2 {
-            margin-bottom: 10px;
-        }
-        #main-content {
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-        }
-
-        .graph-container {
-            margin-bottom: 40px;
-        }
-        .graph-title {
-            text-align: center;
-        }
-        .sensor-graph {
-            width: 100%;
-            height: 400px;
-            background-color: #111;
-        }
-        
-        input[type="checkbox"] {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            position: relative;
-            margin: auto;
-            left: 0;
-            right: 0;
-            top: 0;
-            bottom: 0;
-            cursor: pointer;
-            outline: none;
-            height: 5.6em;
-            width: 12.5em;
-            background-color: #000000;
-            -webkit-transform: skewX(-7deg);
-            -ms-transform: skewX(-7deg);
-            transform: skewX(-7deg);
-            -webkit-transition: 0.3s;
-            -o-transition: 0.3s;
-            transition: 0.3s;
-        }
-        input[type="checkbox"]:before {
-            font-size: 1.5em;
-            content: "OFF";
-            position: relative;
-            width: 3.75em;
-            height: 2.9em;
-            background-color: #2d2936;
-            color: #a0a0a0;
-            top: 0.42em;
-            left: 0.42em;
-            -webkit-transition: 0.3s;
-            -o-transition: 0.3s;
-            transition: 0.3s;
-            display: -webkit-box;
-            display: -ms-flexbox;
-            display: flex;
-            -webkit-box-align: center;
-            -ms-flex-align: center;
-            align-items: center;
-            -webkit-box-pack: center;
-            -ms-flex-pack: center;
-            justify-content: center;
-            font-family: "Poppins", sans-serif;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-        input[type="checkbox"]:checked {
-            background: -o-linear-gradient(315deg, #8175fe, #89befe);
-            background: linear-gradient(135deg, #8175fe, #89befe);
-        }
-        input[type="checkbox"]:checked:before {
-            content: "ON";
-            left: 4.1em;
-            color: #89befe;
-        }
-        
-        .scaledown50{
-            zoom: 0.5;
-            -moz-transform: scale(0.5);
-        }
-        
-    </style>
 </head>
 <body>
     
-    <div class="button-container">
+    <div class="nice-container">
         <p id="temperature">Temperature: --°C</p>
         <p id="humidity">Humidity: --%</p>
         <p id="pressure">Pressure: -- hPa</p>
         <p id="lux">Lux: --</p>
         <p id="uvs">UVS: --</p>
     </div>
-    <div class="button-container">
+
+    <div class="nice-container">
     
         <div id="mode-div">
             <div><h4>Auto Mode</h4></div>
@@ -157,6 +30,51 @@
             <div><h4>Light</h4></div>
             <div class="scaledown50"><input id="light-switch" type="checkbox" checked /></div>
         </div>
+    </div>
+
+    <div class="nice-container">
+        <!-- Add a button to open the modal window -->
+        <button onclick="openModal()">Add Threshold Rule</button>
+        <button onclick="saveRules()">Save Rules</button>
+        <button onclick="refreshRules()">Refresh Rules</button>
+        <br><br>
+        <!-- Modal window for adding threshold rules -->
+        <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Add Threshold Rule</h2>
+            <select id="datatype">
+                <option value="lux">Lux</option>
+                <option value="temperature">Temperature</option>
+                <option value="humidity">Humidity</option>
+                <option value="uvs">UVS</option>
+            </select>
+            <select id="operator">
+                <option value="more_than">More Than</option>
+                <option value="equal">Equal</option>
+                <option value="less_than">Less Than</option>
+            </select>
+            <input type="text" id="threshold-value" placeholder="Threshold Value">
+            <select id="action">
+            <option value="open_window">Open Window</option>
+            <option value="close_window">Close Window</option>
+            <option value="light_on">Light On</option>
+            <option value="light_off">Light Off</option>
+            </select>
+            <button onclick="addThreshold()">Add Rule</button>
+        </div>
+        </div>
+
+        <!-- Table to display threshold rules -->
+        <table id="threshold-table">
+        <tr>
+            <th>Datatype</th>
+            <th>Operator</th>
+            <th>Threshold Value</th>
+            <th>Action</th>
+            <th>Options</th>
+        </tr>
+        </table>
     </div>
 
     <div id="main-content">
@@ -185,107 +103,6 @@
     </div>
 
     <script src="{{url_for('static', filename='chart.js')}}"></script>
-    <script>
-        // Update data 
-        function updateData() {
-            console.log('Updating data...');
-
-            // Read sensor data from the JSON
-            fetch('/get_sensor_data')
-            .then(response => response.json())
-            .then(data => {
-                // Separate data for each parameter
-                const labels = data.map(item => item.timestamp);
-                const temperatureData = data.map(item => item.temperature);
-                const humidityData = data.map(item => item.humidity);
-                const pressureData = data.map(item => item.pressure);
-                const luxData = data.map(item => item.lux);
-                const uvsData = data.map(item => item.uvs);
-
-                // Create graphs for each parameter
-                createOrUpdateGraph('temperature-graph', 'Temperature (°C)', labels, temperatureData, '#ff6384');
-                createOrUpdateGraph('humidity-graph', 'Humidity (%)', labels, humidityData, '#36a2eb');
-                createOrUpdateGraph('pressure-graph', 'Pressure', labels, pressureData, '#ffce56');
-                createOrUpdateGraph('lux-graph', 'Lux', labels, luxData, '#4bc0c0');
-                createOrUpdateGraph('uvs-graph', 'UVS', labels, uvsData, '#ff9f40');
-
-                const latest = data[data.length - 1];
-
-                document.getElementById('temperature').textContent = `Temperature: ${latest.temperature}°C`;
-                document.getElementById('humidity').textContent = `Humidity: ${latest.humidity}%`;
-                document.getElementById('pressure').textContent = `Pressure: ${latest.pressure} hPa`;
-                document.getElementById('lux').textContent = `Lux: ${latest.lux}`;
-                document.getElementById('uvs').textContent = `UVS: ${latest.uvs}`;
-                            
-            })
-            .catch(error => console.error('Error fetching data:', error));
-
-            // Read action data from the JSON
-            // Code Here
-        }
-
-        // Function to create or update a graph
-        function createOrUpdateGraph(canvasId, label, labels, data, borderColor) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            let chart = Chart.getChart(canvasId);
-
-            if (chart) {
-                // Update the existing chart
-                chart.data.labels = labels;
-                chart.data.datasets[0].data = data;
-                chart.update();
-            } else {
-                // Create a new chart
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: label,
-                            data: data,
-                            borderColor: borderColor,
-                            backgroundColor: 'transparent'
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            xAxes: [{
-                                type: 'time',
-                                time: {
-                                    unit: 'hour',
-                                    displayFormats: {
-                                        hour: 'HH:mm'
-                                    }
-                                }
-                            }]
-                        }
-                    }
-                });
-            }
-        }
-
-        function modeSwitcher(){
-            var mode = document.getElementById('mode-switch').checked;
-            if(mode){
-                document.getElementById('window-div').hidden = true;
-                document.getElementById('light-div').hidden = true;
-            } else {
-                document.getElementById('window-div').hidden = false;
-                document.getElementById('light-div').hidden = false;
-            }
-        }
-
-        // Initial call to update sensor data
-        updateData();
-        modeSwitcher();
-        // Set interval to update sensor data every 3 seconds
-        setInterval(updateData, 3000);
-
-        document.getElementById('mode-switch').addEventListener('change', function() {
-            modeSwitcher();
-        });
-
-        
-    </script>
+    <script src="{{url_for('static', filename='script.js')}}"></script>
 </body>
 </html>

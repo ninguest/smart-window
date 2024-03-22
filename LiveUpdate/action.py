@@ -14,6 +14,8 @@ dataJSONPath = "data.json"
 action_type = ["motor"]
 restartScriptPath = "restartSensor.sh"
 
+def test(client_socket):
+    print("test")
 # Read Data 
 def read_json_file(file_path):
     # Check if the file exists
@@ -137,7 +139,7 @@ def main():
     if(response == "[Sensor identification success.]"):
         print("[Identification success.]")
         # Start thread to receive data from server.
-        receive_thread = threading.Thread(target=receive_messages, args=(client_socket))
+        receive_thread = threading.Thread(target=test, args=(client_socket, 1))
         receive_thread.start()
 
     else:
