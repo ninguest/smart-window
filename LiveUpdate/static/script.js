@@ -235,12 +235,55 @@ function createOrUpdateGraph(canvasId, label, labels, data, borderColor) {
 function modeSwitcher(){
     var mode = document.getElementById('mode-switch').checked;
     if(mode){
+        sendServerMessage('function_mode:auto');
         document.getElementById('window-div').hidden = true;
         document.getElementById('light-div').hidden = true;
     } else {
+        sendServerMessage('function_mode:manual');
         document.getElementById('window-div').hidden = false;
         document.getElementById('light-div').hidden = false;
     }
+}
+
+function toggleWindow(){
+    var window = document.getElementById('window-switch').checked;
+    if(window){
+        sendServerMessage('action_control:window_on');
+    } else {
+        sendServerMessage('action_control:window_off');
+    }
+}
+
+function toggleLight(){
+    var light = document.getElementById('light-switch').checked;
+    if(light){
+        sendServerMessage('action_control:light_on');
+    } else {
+        sendServerMessage('action_control:light_off');
+    }
+
+}
+
+function sendServerMessage(message) {
+    fetch('/send_server_message', {
+        method: 'POST', // or 'GET'
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: message }),
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response from server:', data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
 }
 
 // Initial call to update sensor data
@@ -252,4 +295,12 @@ setInterval(updateData, 3000);
 
 document.getElementById('mode-switch').addEventListener('change', function() {
     modeSwitcher();
+});
+
+document.getElementById('window-switch').addEventListener('click', function() {
+    toggleWindow();
+});
+
+document.getElementById('light-switch').addEventListener('click', function() {
+    toggleLight();
 });

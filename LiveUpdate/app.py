@@ -1,8 +1,17 @@
 from flask import Flask, request, jsonify, render_template
 import json
 import socket
+import os
+import subprocess
+import threading
+import random
+import string
+import time
 
 app = Flask(__name__)
+client_data = {
+    "connection_type": "webapp",
+}
 
 # Function to load sensor data from JSON file
 def load_sensor_data(file_path):
@@ -31,6 +40,56 @@ def get_local_ip():
         print(f"Error getting local IP: {e}")
         return None
 
+# Function to receive data from server.
+def receive_messages(client_socket):
+    while True:
+        try:
+            # Receive data from server.
+            message = client_socket.recv(1024).decode('utf-8')
+
+            # If server returns error data, ask client to restart.
+            if message == "server_control:quit":
+                print("[Quit signal received from server. Shutting client down...]")
+                os._exit(1)
+            else:
+                print("\n" + message)
+            
+        except Exception as e:
+            # Display error message.
+            print(f"\nError: {e}")
+            break
+
+    client_socket.close()
+    quit()
+
+# Connect to the server
+def app_to_server():
+    global connectedClient  # Declare connectedClient as a global variable
+    
+    while True:
+        try:
+            host = get_local_ip()
+            port = 8888
+            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client_socket.connect((host, port))
+            break
+        except Exception as e:
+            print(f"Error connecting to server: {e}")
+    
+    print(client_socket.recv(1024).decode('utf-8'))
+    client_socket.sendall(json.dumps(client_data).encode('utf-8'))
+    response = client_socket.recv(1024).decode('utf-8')
+    
+    if(response == "[Sensor identification success.]"):
+        print("[Sensor identification success.]")
+        connectedClient = client_socket
+        receive_thread = threading.Thread(target=receive_messages, args=(client_socket, ))
+        receive_thread.start()
+    else: 
+        print("[Sensor identification failed.]")
+        client_socket.close()
+        os._exit(1)
+        
 # Route to render the HTML page
 @app.route('/')
 def index():
@@ -73,5 +132,26 @@ def load_rules():
         print(f"Error loading threshold data: {str(e)}")
         return jsonify([])
 
+# Route to receive messages from the client
+@app.route('/send_server_message', methods=['POST'])
+def receive_message():
+    # Extract the message from the request
+    message = request.json.get('message')
+
+    connectedClient.sendall(message.encode('utf-8'))
+    
+    # Optionally, send a response back to the client
+    response = {'status': 'Message received successfully'}
+    return jsonify(response)
+
+
 if __name__ == '__main__':
+    # Run server main in a separate thread
+    server_thread = threading.Thread(target=app_to_server, kwargs={})
+    server_thread.start()
+    
+    # Start the Flask app in the main thread
     app.run(host='0.0.0.0', debug=True)
+
+
+

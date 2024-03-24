@@ -139,7 +139,7 @@ def main():
     if(response == "[Sensor identification success.]"):
         print("[Identification success.]")
         # Start thread to receive data from server.
-        receive_thread = threading.Thread(target=test, args=(client_socket, 1))
+        receive_thread = threading.Thread(target=test, args=(client_socket, ))
         receive_thread.start()
 
     else:

@@ -8,12 +8,11 @@ from datetime import datetime
 
 sensors = {}
 actions = {}
+webapps = {}
 sensorDataPath = "sensor_data.json"
 thresholdDataPath = "threshold_data.json"
-thresholds = []
-sensor_datas = [dict for i in range(20)]
 
-
+## Note change the threshold class for this TMR
 
 live_sensor_data = {
     "temperature": None,
@@ -30,84 +29,89 @@ server_data = {
     "function_mode" : "auto"
 }
 
-class Threshold:
-    def __init__(self, datatype: str, data_threshold: any, operator: str, output_client: str) -> None:
-        self.datatype = datatype
-        self.data_threshold = data_threshold
-        self.operator = operator
-        self.output_client = output_client
-
-def get_mean(datatype: str) -> float:
-    total = 0
-    size = len(sensor_datas) if size is not 0 else 1
-        
-    sensor_data: dict
-    for sensor_data in sensor_datas:
-        data = sensor_data.get(datatype)
-        if data is None:
-            continue
-        total += sensor_data.get(datatype)
-    return total / float(size)
-
-def is_threshold_activated(threshold: Threshold):
-        match threshold.operator:
-            case "<": return get_mean(threshold.datatype) < threshold.data_threshold
-            case ">": return get_mean(threshold.datatype) > threshold.data_threshold
-            case "=": return get_mean(threshold.datatype) == threshold.data_threshold  
-            case _: return False
-
 def run_threshold():
 
-    if len(sensor_datas) < 20:
+    if server_data["function_mode"] != "auto":
+        threading.Timer(2, run_threshold).start()
+        return 
+    
+    print("\nRunning threshold function...")
+    
+    # Get the last 20 data
+    dataCollection = load_last_n_sensor_data(sensorDataPath, 20)
+    
+    # Check if data is available or less than 20    
+    if dataCollection is None or len(dataCollection) < 20:
+        threading.Timer(2, run_threshold).start()
+        return
+    
+    # Check if actions are available
+    if len(actions) < 1:
+        # print(f"\nNo actions available. {len(actions)} actions clients connected.")
+        threading.Timer(2, run_threshold).start()
         return
         
-    threshold: Threshold
-    for threshold in thresholds:
-        if is_threshold_activated(threshold):
-            print(threshold.output_client)
-            #threshold.output_client.sendall("True".encode('utf-8'))
-
-def add_threshold(threshold: Threshold):
-    thresholds.append(threshold)
-
-def load_threshold_data(file_path):
-    try:
-        with open(file_path, "r") as file:
-            threshold_data = json.load(file)
-        thresholds = threshold_data
-        return threshold_data
-    except FileNotFoundError:
-        # If the file doesn't exist yet create a new file with initial data
-        thresholds = [
-            {
-                "datatype": "temperature",
-                "data_threshold": 28,
-                "operator": ">",
-                "output_client": ["action_control:window_on"]
-            },
-            {
-                "datatype": "humidity",
-                "data_threshold": 60,
-                "operator": ">",
-                "output_client": ["action_control:window_on"]
-            },
-            {
-                "datatype": "lux",
-                "data_threshold": 0.4,
-                "operator": "<",
-                "output_client": ["action_control:light_on", "action_control:window_on"]
-            },
-            {
-                "datatype": "uvs",
-                "data_threshold": 100,
-                "operator": ">",
-                "output_client": ["action_control:window_on"]
-            }
+    # calculate the mean of the last 20 data
+    temperatures = [entry['temperature'] for entry in dataCollection if entry['temperature'] is not None]
+    humidities = [entry['humidity'] for entry in dataCollection if entry['humidity'] is not None]
+    pressures = [entry['pressure'] for entry in dataCollection if entry['pressure'] is not None]
+    luxes = [entry['lux'] for entry in dataCollection if entry['lux'] is not None]
+    gases = [entry['gas'] for entry in dataCollection if entry['gas'] is not None]
+    uvses = [entry['uvs'] for entry in dataCollection if entry['uvs'] is not None]
+    
+    temperature_mean = sum(temperatures) / len(temperatures) if temperatures else None
+    humidity_mean = sum(humidities) / len(humidities) if humidities else None
+    pressure_mean = sum(pressures) / len(pressures) if pressures else None
+    lux_mean = sum(luxes) / len(luxes) if luxes else None
+    gas_mean = sum(gases) / len(gases) if gases else None
+    uvs_mean = sum(uvses) / len(uvses) if uvses else None
+    
+    # get the threshold rules
+    thresholdRules = load_all_file_data(thresholdDataPath)
+    
+    # check if the mean values satisfy the threshold rules
+    for rule in thresholdRules:
+        value = float(rule["value"])
+        operator = rule["operator"]
+        datatype = rule["datatype"]
+        action = rule["action"]
+        
+        # Check if datatype matches and calculate mean accordingly
+        if datatype == "lux":
+            mean_value = lux_mean
+        elif datatype == "temperature":
+            mean_value = temperature_mean
+        elif datatype == "humidity":
+            mean_value = humidity_mean
+        elif datatype == "uvs":
+            mean_value = uvs_mean
+        
+        # Check if mean value satisfies the threshold condition
+        if mean_value is not None:
+            if operator == "more_than" and mean_value > value:
+                actionString = actionStringConverter(action)
+                actionSender(actionString)
+            elif operator == "less_than" and mean_value < value:
+                actionString = actionStringConverter(action)
+                actionSender(actionString)
+            elif operator == "equal" and mean_value == value:
+                actionString = actionStringConverter(action)
+                actionSender(actionString)
+                
+    # Schedule the next execution after 2 seconds
+    threading.Timer(2, run_threshold).start()
             
-        ]
-        return []
-    except Exception as e:
-        print(f"Error loading threshold data: {e}")
+def actionStringConverter(action):
+    match action:
+        case "window_on": return "action_control:window_on"
+        case "window_off": return "action_control:window_off"
+        case "light_on": return "action_control:light_on"
+        case "light_off": return "action_control:light_off"
+        case _: return "action_control:window_off"
+
+def actionSender(actionString):
+    for action in actions.keys():
+        action.sendall(actionString.encode('utf-8'))
 
 # Function to handle client connections
 def handle_client(client_socket, client_data):
@@ -124,12 +128,33 @@ def handle_client(client_socket, client_data):
                 if post_timestamp != pre_timestamp:
                     # Append sensor data to file
                     append_sensor_data(live_sensor_data, sensorDataPath)
-                add_data(live_sensor_data)
-                run_threshold()              
                 
             elif client_data["connection_type"] == "action":
                 pass
             
+            elif client_data["connection_type"] == "webapp":
+                message = client_socket.recv(1024).decode('utf-8')
+                
+                if(message == "function_mode:manual"):
+                    server_data["function_mode"] = "manual"
+                    print(f"\nFunction mode set to '{server_data['function_mode']}'.")
+                elif(message == "function_mode:auto"):
+                    server_data["function_mode"] = "auto"
+                    print(f"\nFunction mode set to '{server_data['function_mode']}'.")
+                elif(message == "action_control:window_on"):
+                    print("\nWebApp to Actions: Window On")
+                    actionSender("action_control:window_on")
+                elif(message == "action_control:window_off"):
+                    print("\nWebApp to Actions: Window Off")
+                    actionSender("action_control:window_off")
+                elif(message == "action_control:light_on"):
+                    print("\nWebApp to Actions: Light On")
+                    actionSender("action_control:light_on")
+                elif(message == "action_control:light_off"):
+                    print("\nWebApp to Actions: Light Off")
+                    actionSender("action_control:light_off")
+                else:
+                    print("\n" + message)
 
         except Exception as e:
             client_socket.sendall("Error. Restart client and try again.".encode('utf-8')) # Send data to client
@@ -182,12 +207,12 @@ def append_sensor_data(data, file_path):
         print(f"Error appending sensor data to file: {e}")
 
 # Get the latest Data
-def load_latest_sensor_data(file_path):
+def load_last_n_sensor_data(file_path, n):
     try:
         with open(file_path, 'r') as file:
             data = json.load(file)
             if data:  # Check if the data is not empty
-                return data[-1]  # Return the last entry in the list
+                return data[-n:]  # Return the last n entries in the list
             else:
                 return None  # Return None if the file is empty
     except FileNotFoundError:
@@ -198,7 +223,7 @@ def load_latest_sensor_data(file_path):
         return None
 
 # Get all sensor data
-def load_all_sensor_data(file_path):
+def load_all_file_data(file_path):
     try:
         with open(file_path, "r") as file:
             sensor_data = json.load(file)
@@ -213,6 +238,8 @@ def is_valid_connection(connection_type):
             case "sensor":
                 return True
             case "action":
+                return True
+            case "webapp":
                 return True
             case _:
                 return False
@@ -270,14 +297,20 @@ def command_interface():
         
         elif command == "actionWO":
             print("\nActions: Window On")
-            for action in actions.keys():
-                action.sendall("action_control:window_on".encode('utf-8'))
+            actionSender("action_control:window_on")
+        elif command == "actionWC":
+            print("\nActions: Window Close")
+            actionSender("action_control:window_close")
+        elif command == "actionLO":
+            print("\nActions: Light On")
+            actionSender("action_control:light_on")
+        elif command == "actionLC":
+            print("\nActions: Light Close")
+            actionSender("action_control:light_close")
+        elif command == "test":
+            run_threshold()
         else:
             print("\nInvalid command.")
-
-def add_data(data):
-    sensor_datas.append(data)
-    sensor_datas.pop(0)
     
 # Main function
 def main():
@@ -298,6 +331,8 @@ def main():
     # Server will listen for commands in a separate thread
     command_thread = threading.Thread(target=command_interface, args=())
     command_thread.start()
+    
+    run_threshold()
 
     while True:
         
@@ -318,6 +353,8 @@ def main():
                 sensors[client_socket] = client_data
             elif client_data["connection_type"] == "action":
                 actions[client_socket] = client_data
+            elif client_data["connection_type"] == "webapp":
+                webapps[client_socket] = client_data
                 
             # Create thread to handle each client connection respectively
             client_thread = threading.Thread(target=handle_client, args=(client_socket, client_data))
@@ -327,9 +364,7 @@ def main():
             client_socket.sendall("[Sensor identification failed.]".encode('utf-8'))
             client_socket.sendall("server_control:quit")
 
-
     server_socket.close()
-
 
 if __name__ == "__main__":
     main()
