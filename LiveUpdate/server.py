@@ -35,7 +35,7 @@ def run_threshold():
         threading.Timer(2, run_threshold).start()
         return 
     
-    print("\nRunning threshold function...")
+    # print("\nRunning threshold function...")
     
     # Get the last 20 data
     dataCollection = load_last_n_sensor_data(sensorDataPath, 20)
