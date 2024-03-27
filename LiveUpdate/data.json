@@ -4,6 +4,6 @@
     "action_type": [
         "motor"
     ],
-    "host_ip": "192.168.1.15",
+    "host_ip": "192.168.1.16",
     "host_port": "8888"
 }

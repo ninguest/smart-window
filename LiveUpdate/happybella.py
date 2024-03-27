@@ -119,7 +119,7 @@ def toggleLight(bool):
             print("LED already off")
 
 def toggleMotor(bool):
-    if client_data["window_state"] == bool:
+    if client_data == bool:
         print("Window is already in this state")
         return
     else:

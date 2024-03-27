@@ -225,6 +225,11 @@ function createOrUpdateGraph(canvasId, label, labels, data, borderColor) {
                                 hour: 'HH:mm'
                             }
                         }
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
                     }]
                 }
             }

@@ -35,7 +35,7 @@ def run_threshold():
         threading.Timer(2, run_threshold).start()
         return 
     
-    # print("\nRunning threshold function...")
+    print("\nRunning threshold function...")
     
     # Get the last 20 data
     dataCollection = load_last_n_sensor_data(sensorDataPath, 20)
@@ -44,10 +44,10 @@ def run_threshold():
     if dataCollection is None or len(dataCollection) < 20:
         threading.Timer(2, run_threshold).start()
         return
-    
+        
     # Check if actions are available
     if len(actions) < 1:
-        # print(f"\nNo actions available. {len(actions)} actions clients connected.")
+        print(f"\nNo actions available. {len(actions)} actions clients connected.")
         threading.Timer(2, run_threshold).start()
         return
         
@@ -67,8 +67,8 @@ def run_threshold():
     uvs_mean = sum(uvses) / len(uvses) if uvses else None
     
     # get the threshold rules
-    thresholdRules = load_all_file_data(thresholdDataPath)
-    
+    thresholdRules = load_threshold_data()
+        
     # check if the mean values satisfy the threshold rules
     for rule in thresholdRules:
         value = float(rule["value"])
@@ -76,6 +76,8 @@ def run_threshold():
         datatype = rule["datatype"]
         action = rule["action"]
         
+        print(action)
+
         # Check if datatype matches and calculate mean accordingly
         if datatype == "lux":
             mean_value = lux_mean
@@ -103,8 +105,8 @@ def run_threshold():
             
 def actionStringConverter(action):
     match action:
-        case "window_on": return "action_control:window_on"
-        case "window_off": return "action_control:window_off"
+        case "open_window": return "action_control:window_on"
+        case "close_window": return "action_control:window_off"
         case "light_on": return "action_control:light_on"
         case "light_off": return "action_control:light_off"
         case _: return "action_control:window_off"
@@ -112,6 +114,7 @@ def actionStringConverter(action):
 def actionSender(actionString):
     for action in actions.keys():
         action.sendall(actionString.encode('utf-8'))
+    print(f"\nActionSender\n{actionString}")
 
 # Function to handle client connections
 def handle_client(client_socket, client_data):
@@ -223,9 +226,9 @@ def load_last_n_sensor_data(file_path, n):
         return None
 
 # Get all sensor data
-def load_all_file_data(file_path):
+def load_threshold_data():
     try:
-        with open(file_path, "r") as file:
+        with open("threshold_data.json", "r") as file:
             sensor_data = json.load(file)
         return sensor_data
     except FileNotFoundError:
